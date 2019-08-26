@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 try {
+    $startDate = explode('-', $_POST['date']);
     $spreadsheet = IOFactory::load($_FILES['file']['tmp_name']);
     $worksheet = $spreadsheet->getActiveSheet();
     $csv_title = array('Subject', 'StartDate', 'EndDate', 'StartTime', 'EndTime', 'Location', 'Description');
@@ -22,22 +23,34 @@ try {
         $teacherName = $worksheet->getCell("I$index")->getValue();
         $classNum = $worksheet->getCell("A$index")->getValue();
         $location = $worksheet->getCell("J$index")->getValue();
+        $weeks = $worksheet->getCell("E$index")->getValue();
 
-        $duration = explode(',', $worksheet->getCell("E$index")->getValue());
+        $duration = explode(',', $weeks);
+        $singleOrDouble = 0;
+        if (false !== strpos($weeks, '单')) {
+            $singleOrDouble = 1;
+        } else if (false !== strpos($weeks, '双')) {
+            $singleOrDouble = 2;
+        }
+
         foreach ($duration as $value) {
             $matches = array();
             preg_match_all('/\d+/', $value, $matches);
-            @$maxWeek = $matches[0][1] !== 0 ? (int)$matches[0][1] : $matches[0][0];
+            /** @noinspection TypeUnsafeComparisonInspection */
+            @$maxWeek = $matches[0][1] != 0 ? $matches[0][1] : $matches[0][0];
             for ($i = $matches[0][0] - 1; $i < $maxWeek; $i++) {
-                $date = Carbon::createFromDate(2019, 8, 26, 'Asia/Shanghai');
+                if ($singleOrDouble === 1 && $i % 2 !== 0) continue;
+                if ($singleOrDouble === 2 && $i % 2 === 0) continue;
+
+                $date = Carbon::createFromDate($startDate[0], $startDate[1], $startDate[2], 'Asia/Shanghai');
                 $date->addWeeks($i)->addDays($day);
 
-                $isSummerTime = $date->isBetween(Carbon::create(2019, 5, 1), Carbon::create(2019, 10, 1));
+                $isSummerTime = $date->isBetween(Carbon::createFromDate($startDate[0], 5, 1, 'Asia/Shanghai'), Carbon::createFromDate($startDate[0], 10, 1, 'Asia/Shanghai'));
                 $data[] = $name;
                 $data[] = $date->toDateString();
                 $data[] = $date->toDateString();
                 $data[] = getClassStartTime($startNum, $isSummerTime);
-                $data[] = getClassEndtTime($endNum, $isSummerTime);
+                $data[] = getClassEndTime($endNum, $isSummerTime);
                 $data[] = $location;
                 $data[] = "$teacherName $classNum";
 
@@ -47,7 +60,7 @@ try {
         }
     }
 
-    csvExport("课表", $csv_title , $csv_filed);
+    csvExport('课表', $csv_title, $csv_filed);
 } catch (Exception $e) {
     return false;
 }

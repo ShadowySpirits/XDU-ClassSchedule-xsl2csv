@@ -28,7 +28,7 @@ function getClassStartTime($startNum, $isSummerTime) {
     return '';
 }
 
-function getClassEndtTime($endNum, $isSummerTime) {
+function getClassEndTime($endNum, $isSummerTime) {
     switch ($endNum) {
         case 2:
             return '10:05';
@@ -64,8 +64,8 @@ function csvExport($excel_name = 'test', $excel_title = [], $excel_filed = []) {
             $sheet->setCellValue("$cellName[$key]1", $value);
         }
 
-        foreach ($excel_filed as $rowNum =>  $item) {
-            foreach ($item as $columnNam =>$value) {
+        foreach ($excel_filed as $rowNum => $item) {
+            foreach ($item as $columnNam => $value) {
                 $sheet->setCellValue($cellName[$columnNam] . ($rowNum + 2), $value);
             }
         }
